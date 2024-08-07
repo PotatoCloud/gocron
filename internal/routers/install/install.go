@@ -3,6 +3,7 @@ package install
 import (
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 
 	macaron "gopkg.in/macaron.v1"
@@ -20,7 +21,7 @@ import (
 // 系统安装
 
 type InstallForm struct {
-	DbType               string `binding:"In(mysql,postgres)"`
+	DbType               string `binding:"In(mysql,postgres,sqlite)"`
 	DbHost               string `binding:"Required;MaxSize(50)"`
 	DbPort               int    `binding:"Required;Range(1,65535)"`
 	DbUsername           string `binding:"Required;MaxSize(50)"`
@@ -77,12 +78,14 @@ func Store(ctx *macaron.Context, form InstallForm) string {
 
 	// 创建管理员账号
 	err = createAdminUser(form)
+	log.Println(err)
 	if err != nil {
 		return json.CommonFailure("创建管理员账号失败", err)
 	}
 
 	// 创建安装锁
 	err = app.CreateInstallLock()
+	log.Println(err)
 	if err != nil {
 		return json.CommonFailure("创建文件安装锁失败", err)
 	}
@@ -93,6 +96,7 @@ func Store(ctx *macaron.Context, form InstallForm) string {
 	app.Installed = true
 	// 初始化定时任务
 	service.ServiceTask.Initialize()
+	log.Println(err)
 
 	return json.Success("安装成功", nil)
 }

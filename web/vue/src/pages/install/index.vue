@@ -89,9 +89,9 @@ export default {
   data () {
     return {
       form: {
-        db_type: 'mysql',
-        db_host: '127.0.0.1',
-        db_port: 3306,
+        db_type: 'sqlite',
+        db_host: 'cron.db',
+        db_port: 0,
         db_username: '',
         db_password: '',
         db_name: '',
@@ -143,11 +143,16 @@ export default {
         {
           value: 'postgres',
           label: 'PostgreSql'
+        },
+        {
+          value: 'sqlite',
+          label: 'SQLite'
         }
       ],
       default_ports: {
         'mysql': 3306,
-        'postgres': 5432
+        'postgres': 5432,
+        'sqlite': 0
       }
     }
   },

@@ -2,6 +2,8 @@ package service
 
 import (
 	"fmt"
+	"github.com/ouqiang/gocron/internal/modules/utils"
+	"golang.org/x/net/context"
 	"net/http"
 	"strconv"
 	"strings"
@@ -275,6 +277,16 @@ func (h *RPCHandler) Run(taskModel models.Task, taskUniqueId int64) (result stri
 	return aggregationResult, aggregationErr
 }
 
+// todo 单节点模式下的命令执行
+
+type LocalShellHandler struct{}
+
+func (h *LocalShellHandler) Run(taskModel models.Task, taskUniqueID int64) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(taskModel.Timeout))
+	defer cancel()
+	return utils.ExecShell(ctx, taskModel.Command)
+}
+
 // 创建任务日志
 func createTaskLog(taskModel models.Task, status models.Status) (int64, error) {
 	taskLogModel := new(models.TaskLog)
@@ -353,7 +365,9 @@ func createHandler(taskModel models.Task) Handler {
 	case models.TaskHTTP:
 		handler = new(HTTPHandler)
 	case models.TaskRPC:
-		handler = new(RPCHandler)
+		// todo 本地任务
+		// handler = new(RPCHandler)
+		handler = new(LocalShellHandler)
 	}
 
 	return handler
@@ -456,7 +470,7 @@ func SendNotification(taskModel models.Task, taskResult TaskResult) {
 		"output":           taskResult.Result,
 		"status":           statusName,
 		"task_id":          taskModel.Id,
-		"remark":  			taskModel.Remark,
+		"remark":           taskModel.Remark,
 	}
 	notify.Push(msg)
 }

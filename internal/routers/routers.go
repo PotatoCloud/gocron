@@ -48,6 +48,7 @@ func Register(m *macaron.Macaron) {
 	// 所有GET方法，自动注册HEAD方法
 	m.SetAutoHead(true)
 	m.Get("/", func(ctx *macaron.Context) {
+
 		file, err := statikFS.Open("/index.html")
 		if err != nil {
 			logger.Error("读取首页文件失败: %s", err)
@@ -168,8 +169,10 @@ func RegisterMiddleware(m *macaron.Macaron) {
 	m.Use(macaron.Renderer())
 	m.Use(checkAppInstall)
 	m.Use(ipAuth)
-	m.Use(userAuth)
-	m.Use(urlAuth)
+
+	// todo 禁用 权限校验
+	//m.Use(userAuth)
+	//m.Use(urlAuth)
 }
 
 // region 自定义中间件

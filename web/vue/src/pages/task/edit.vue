@@ -480,10 +480,10 @@ export default {
         if (!valid) {
           return false
         }
-        if (this.form.protocol === 2 && this.selectedHosts.length === 0) {
-          this.$message.error('请选择任务节点')
-          return false
-        }
+        // if (this.form.protocol === 2 && this.selectedHosts.length === 0) {
+        //   this.$message.error('请选择任务节点')
+        //   return false
+        // }
         if (this.form.notify_status > 1) {
           if (this.form.notify_type === 2 && this.selectedMailNotifyIds.length === 0) {
             this.$message.error('请选择邮件接收用户')

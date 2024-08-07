@@ -99,9 +99,9 @@ func Store(ctx *macaron.Context, form TaskForm) string {
 		return json.CommonFailure("任务名称已存在")
 	}
 
-	if form.Protocol == models.TaskRPC && form.HostId == "" {
-		return json.CommonFailure("请选择主机名")
-	}
+	//if form.Protocol == models.TaskRPC && form.HostId == "" {
+	//	return json.CommonFailure("请选择主机名")
+	//}
 
 	taskModel.Name = form.Name
 	taskModel.Protocol = form.Protocol

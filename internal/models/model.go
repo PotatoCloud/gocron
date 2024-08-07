@@ -11,6 +11,7 @@ import (
 	"github.com/go-xorm/core"
 	"github.com/go-xorm/xorm"
 	_ "github.com/lib/pq"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/ouqiang/gocron/internal/modules/app"
 	"github.com/ouqiang/gocron/internal/modules/logger"
 	"github.com/ouqiang/gocron/internal/modules/setting"
@@ -72,14 +73,32 @@ func (model *BaseModel) pageLimitOffset() int {
 
 // 创建Db
 func CreateDb() *xorm.Engine {
+	// 默认使用sqlite作为数据库
+	if app.Setting.Db.Engine == "" {
+		app.Setting.Db.Engine = "sqlite"
+	}
+
+	if app.Setting.Db.Engine == "sqlite" && app.Setting.Db.Host == "" {
+		app.Setting.Db.Host = "gocron.db"
+	}
+
 	dsn := getDbEngineDSN(app.Setting)
-	engine, err := xorm.NewEngine(app.Setting.Db.Engine, dsn)
+	engine, err := xorm.NewEngine(func() string {
+		if app.Setting.Db.Engine == "sqlite" {
+			return "sqlite3"
+		}
+		return app.Setting.Db.Engine
+	}(), dsn)
 	if err != nil {
 		logger.Fatal("创建xorm引擎失败", err)
 	}
-	engine.SetMaxIdleConns(app.Setting.Db.MaxIdleConns)
-	engine.SetMaxOpenConns(app.Setting.Db.MaxOpenConns)
-	engine.SetConnMaxLifetime(dbMaxLiftTime)
+
+	// 如果不是sqlite, 需要设置连接池参数
+	if app.Setting.Db.Engine != "sqlite" {
+		engine.SetMaxIdleConns(app.Setting.Db.MaxIdleConns)
+		engine.SetMaxOpenConns(app.Setting.Db.MaxOpenConns)
+		engine.SetConnMaxLifetime(dbMaxLiftTime)
+	}
 
 	if app.Setting.Db.Prefix != "" {
 		// 设置表前缀
@@ -100,9 +119,22 @@ func CreateDb() *xorm.Engine {
 
 // 创建临时数据库连接
 func CreateTmpDb(setting *setting.Setting) (*xorm.Engine, error) {
+	if setting.Db.Engine == "" {
+		setting.Db.Engine = "sqlite"
+	}
+
+	if setting.Db.Engine == "sqlite" && setting.Db.Host == "" {
+		setting.Db.Host = "gocron.db"
+	}
+
 	dsn := getDbEngineDSN(setting)
 
-	return xorm.NewEngine(setting.Db.Engine, dsn)
+	return xorm.NewEngine(func() string {
+		if setting.Db.Engine == "sqlite" {
+			return "sqlite3"
+		}
+		return setting.Db.Engine
+	}(), dsn)
 }
 
 // 获取数据库引擎DSN  mysql,sqlite,postgres
@@ -125,6 +157,8 @@ func getDbEngineDSN(setting *setting.Setting) string {
 			setting.Db.Host,
 			setting.Db.Port,
 			setting.Db.Database)
+	case "sqlite":
+		dsn = fmt.Sprintf("%s?cache=shared&journal_mode=WAL&synchronous=NORMAL", setting.Db.Host)
 	}
 
 	return dsn
